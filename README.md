@@ -18,3 +18,8 @@ mtproxy на 443 порт хост режим
 ```
 curl -fsSL https://raw.githubusercontent.com/shoonia69/myscripts/refs/heads/main/prep_vpn/mtproxy.sh | bash
 ```
+
+mtproxy на 10443 порт хост режим 
+```
+curl -fsSL https://raw.githubusercontent.com/shoonia69/myscripts/refs/heads/main/prep_vpn/mtproxyport.sh | bash
+```
