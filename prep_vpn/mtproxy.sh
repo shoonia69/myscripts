@@ -1,4 +1,3 @@
-   
 #!/bin/bash
 
 dnf update -y
@@ -230,5 +229,8 @@ services:
         max-size: "10m"
         max-file: "3"
 EOF
+
+cd /home/almalinux/docker-compose/docker-compose/telemt-docker
+docker compose up -d
 
 
