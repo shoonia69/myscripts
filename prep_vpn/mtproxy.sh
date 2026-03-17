@@ -230,7 +230,7 @@ services:
         max-file: "3"
 EOF
 
-cd /home/almalinux/docker-compose/docker-compose/telemt-docker
+cd docker-compose/telemt-docker
 docker compose up -d
 
 
