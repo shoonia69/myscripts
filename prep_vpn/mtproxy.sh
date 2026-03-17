@@ -98,7 +98,7 @@ echo "✅ Docker успешно установлен и работает!"
    chmod 777 docker-compose/telemt-docker/telemt-config
    chmod 666 docker-compose/telemt-docker/telemt-config/telemt.toml
 
-cat <<EOF > docker-compose/telemt-docker/telemt-config/telemt.toml
+cat <<'EOF' > docker-compose/telemt-docker/telemt-config/telemt.toml
 
 log_level = "normal"
 
@@ -146,7 +146,7 @@ hello = "00000000000000000000000000000000"
 EOF
 
 touch docker-compose/telemt-docker/docker-compose.yml
-cat <<EOF > docker-compose/telemt-docker/docker-compose.yml
+cat <<'EOF' > docker-compose/telemt-docker/docker-compose.yml
 services:
   telemt:
     image: whn0thacked/telemt-docker:latest
