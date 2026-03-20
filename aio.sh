@@ -63,6 +63,7 @@ dispatch() {
     "3")   action_3 ;;
     "4.1") action_4_1 ;;
     "4.2") action_4_2 ;;
+    "5") action_5 ;;
     *) echo "Неизвестный пункт: '$id'" >&2; return 1 ;;
   esac
 }
