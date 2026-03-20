@@ -1,3 +1,8 @@
+0. 
+```
+curl -fsSL https://raw.githubusercontent.com/shoonia69/myscripts/refs/heads/main/aio.sh | bash
+```
+
 1. подготовка вм: апдейт, установка утилит
 ```
 curl -fsSL https://raw.githubusercontent.com/shoonia69/myscripts/refs/heads/main/prep_vpn/1-prepvm.sh | bash
