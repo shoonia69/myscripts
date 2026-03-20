@@ -22,6 +22,7 @@ declare -A DESC=(
   ["3"]="Установка Portainer (по желанию)"
   ["4.1"]="Установка MTProxy на порт 443 (host mode, порт 443 должен быть свободен)"
   ["4.2"]="Установка MTProxy на порт 10443 (переадресация в контейнер)"
+  ["5"]="тест прогон вайб кодинга"
 )
 
 declare -A URL=(
@@ -30,6 +31,7 @@ declare -A URL=(
   ["3"]="https://raw.githubusercontent.com/shoonia69/myscripts/refs/heads/main/prep_vpn/3-portainerinstall.sh"
   ["4.1"]="https://raw.githubusercontent.com/shoonia69/myscripts/refs/heads/main/prep_vpn/4-1-mtproxy443.sh"
   ["4.2"]="https://raw.githubusercontent.com/shoonia69/myscripts/refs/heads/main/prep_vpn/4-2-mtproxy10443.sh"
+  ["5"]="https://raw.githubusercontent.com/shoonia69/myscripts/refs/heads/main/prep_vpn/4-1-mtproxy443-vibe.sh"
 )
 
 # ---------- Общие функции ----------
@@ -51,6 +53,7 @@ action_2()   { run_remote_script "2"; }
 action_3()   { run_remote_script "3"; }
 action_4_1() { run_remote_script "4.1"; }
 action_4_2() { run_remote_script "4.2"; }
+action_5() { run_remote_script "5"; }
 
 dispatch() {
   local id="$1"
