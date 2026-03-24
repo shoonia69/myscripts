@@ -1,6 +1,6 @@
 0. 
 ```
-curl -fsSL https://raw.githubusercontent.com/shoonia69/myscripts/refs/heads/main/aio.sh | bash
+bash <(curl -fsSL https://raw.githubusercontent.com/shoonia69/myscripts/refs/heads/main/aio.sh)
 ```
 
 1. подготовка вм: апдейт, установка утилит
