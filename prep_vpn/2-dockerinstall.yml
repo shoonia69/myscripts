@@ -1,0 +1,142 @@
+---
+# Name: Install Docker with Repo & User Config
+# Note: community.general collection is recommended for complex distro support
+# (e.g., apk for Alpine)
+
+- name: Install Docker (Debian/RHEL/Alpine)
+  hosts: all
+  become: true
+  vars:
+    # Map distribution to package manager logic
+    package_manager: "{{ ansible_pkg_mgr }}"
+    # Docker group name (defaults to 'docker' or 'wheel')
+    docker_group: "docker" 
+    # Current user
+    current_user: "{{ ansible_user }}"
+    # Docker CE package name variations
+    docker_package: "docker-ce"
+    docker_alpine_package: "docker"
+    # Version check flag (if already installed & version >= 23.0, skip install)
+    docker_installed: "{{ not docker_package }}" # Logic handled in task
+
+  tasks:
+    
+    # --- Step 1: Facts & Preparation ---
+    - name: Gather all ansible facts
+      ansible.builtin.setup:
+
+    - name: Create Docker group if it doesn't exist
+      ansible.builtin.group:
+        name: "{{ docker_group }}"
+        state: present
+
+    # --- Step 2: Install Dependencies (Alpine) ---
+    - name: Install Alpine dependencies (openrc, busybox)
+      community.general.apk:
+        name: 
+          - "openrc"
+          - "busybox"
+        state: present
+      when: ansible_os_family == "Alpine"
+      changed_when: false # Don't report changes if installed
+
+    # --- Step 3: Add Docker Repository ---
+    - name: Create GPG Key for Docker
+      ansible.builtin.uri:
+        url: "https://download.docker.com/linux/gpg"
+        dest: "/etc/apt/trusted.gpg.d/docker.gpg"
+      when: ansible_os_family == "Debian"
+      register: download_result
+      failed_when: download_result.status != 200
+      ignore_errors: true
+      changed_when: false
+
+    - name: Copy GPG Key to RHEL
+      community.general.get_url:
+        url: "https://download.docker.com/linux/static/stable/x86_64/gpg"
+        dest: "/etc/pki/rpm-gpg/RPM-GPG-KEY-docker-engine"
+      when: ansible_os_family == "RedHat"
+      register: download_rhel
+      failed_when: download_rhel.status != 200
+
+    - name: Add Docker Apt Repository
+      ansible.builtin.apt_repository:
+        repo: "deb [arch=amd64] https://download.docker.com/linux/{{ ansible_distribution }} {{ ansible_distribution_release }} stable"
+        state: present
+        filename: "docker-ce"
+      when: ansible_os_family == "Debian"
+
+    - name: Add Docker Yum Repository (RHEL/CentOS)
+      community.general.yum_repository:
+        name: "docker-ce-stable"
+        baseurl: "https://download.docker.com/linux/static/stable/x86_64/"
+        enabled: 1
+        gpgcheck: yes
+        gpgkey: "file:///etc/pki/rpm-gpg/RPM-GPG-KEY-docker-engine"
+      when: ansible_os_family == "RedHat"
+
+    # --- Step 4: Update Packages ---
+    - name: Update packages (Debian)
+      ansible.builtin.apt:
+        upgrade: safe
+        state: latest
+      when: ansible_os_family == "Debian"
+      # Alpine handles update separately below
+
+    - name: Update packages (RedHat)
+      ansible.builtin.dnf:
+        name: "*"
+        state: latest
+      when: ansible_os_family == "RedHat"
+      ignore_errors: true
+
+    - name: Update packages (Alpine)
+      community.general.apk:
+        name: "*"
+        state: present
+      when: ansible_os_family == "Alpine"
+
+    # --- Step 5: Install Docker CE ---
+    - name: Install Docker CE (Debian/RHEL)
+      ansible.builtin.package:
+        name: "{{ docker_package }}"
+        state: present
+      register: docker_install_result
+      when: ansible_os_family == "Debian" or ansible_os_family == "RedHat"
+      ignore_errors: true # If package is already installed
+
+    - name: Install Docker CE (Alpine)
+      community.general.apk:
+        name: "{{ docker_alpine_package }}"
+        state: present
+      register: docker_install_alpine
+      when: ansible_os_family == "Alpine"
+
+    # --- Step 6: Check Version and Enable Service ---
+    - name: Check Docker version (Debian/RHEL)
+      community.general.command:
+        cmd: "docker --version"
+      register: version_check_result
+      failed_when: false
+      changed_when: false
+      when: ansible_os_family != "Alpine"
+
+    - name: Print Docker Version (Debian/RHEL)
+      ansible.builtin.debug:
+        msg: "Docker version: {{ version_check_result.stdout }}"
+      when: ansible_os_family != "Alpine" and version_check_result.rc == 0
+
+    # --- Step 7: Start Docker Service ---
+    - name: Start Docker service
+      ansible.builtin.service:
+        name: "docker"
+        state: started
+        enabled: true
+      when: not ansible_os_family == "Alpine"
+
+    # --- Step 8: Add User to Group ---
+    - name: Add current user to docker group
+      ansible.builtin.user:
+        name: "{{ current_user }}"
+        groups: "{{ docker_group }}"
+        append: true
