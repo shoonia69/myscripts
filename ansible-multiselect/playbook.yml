@@ -1,0 +1,160 @@
+---
+- name: System maintenance with selectable actions
+  hosts: target
+  become: true
+  gather_facts: true
+
+  vars:
+    do_update: false
+    install_tree: false
+    install_tmux: false
+    install_bash_completion: false
+    install_docker: false
+
+  tasks:
+    - name: Update apt package cache
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 3600
+      when:
+        - do_update | bool
+        - ansible_facts.os_family == "Debian"
+
+    - name: Upgrade Debian/Ubuntu packages
+      ansible.builtin.apt:
+        upgrade: dist
+      when:
+        - do_update | bool
+        - ansible_facts.os_family == "Debian"
+
+    - name: Upgrade RHEL-like packages
+      ansible.builtin.dnf:
+        name: "*"
+        state: latest
+        update_cache: true
+      when:
+        - do_update | bool
+        - ansible_facts.os_family == "RedHat"
+
+    - name: Install selected common utilities
+      ansible.builtin.package:
+        name: "{{ selected_common_packages }}"
+        state: present
+      vars:
+        selected_common_packages: >-
+          {{
+            []
+            + (['tree'] if install_tree | bool else [])
+            + (['tmux'] if install_tmux | bool else [])
+            + (['bash-completion'] if install_bash_completion | bool else [])
+          }}
+      when: selected_common_packages | length > 0
+
+    - name: Install Docker prerequisites on Debian/Ubuntu
+      ansible.builtin.apt:
+        name:
+          - ca-certificates
+          - curl
+          - gnupg
+          - lsb-release
+        state: present
+        update_cache: true
+      when:
+        - install_docker | bool
+        - ansible_facts.os_family == "Debian"
+
+    - name: Create apt keyring directory
+      ansible.builtin.file:
+        path: /etc/apt/keyrings
+        state: directory
+        mode: "0755"
+      when:
+        - install_docker | bool
+        - ansible_facts.os_family == "Debian"
+
+    - name: Download Docker apt GPG key
+      ansible.builtin.get_url:
+        url: "https://download.docker.com/linux/{{ ansible_facts.distribution | lower }}/gpg"
+        dest: /etc/apt/keyrings/docker.asc
+        mode: "0644"
+      when:
+        - install_docker | bool
+        - ansible_facts.os_family == "Debian"
+
+    - name: Add Docker apt repository
+      ansible.builtin.apt_repository:
+        repo: >-
+          deb [arch={{ docker_deb_arch }} signed-by=/etc/apt/keyrings/docker.asc]
+          https://download.docker.com/linux/{{ ansible_facts.distribution | lower }}
+          {{ ansible_facts.distribution_release }} stable
+        filename: docker
+        state: present
+        update_cache: true
+      vars:
+        docker_deb_arch_map:
+          x86_64: amd64
+          aarch64: arm64
+          armv7l: armhf
+        docker_deb_arch: "{{ docker_deb_arch_map.get(ansible_facts.architecture, ansible_facts.architecture) }}"
+      when:
+        - install_docker | bool
+        - ansible_facts.os_family == "Debian"
+
+    - name: Install Docker on Debian/Ubuntu
+      ansible.builtin.apt:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-buildx-plugin
+          - docker-compose-plugin
+        state: present
+      when:
+        - install_docker | bool
+        - ansible_facts.os_family == "Debian"
+
+    - name: Install Docker prerequisites on RHEL-like systems
+      ansible.builtin.dnf:
+        name:
+          - dnf-plugins-core
+          - device-mapper-persistent-data
+          - lvm2
+          - curl
+        state: present
+      when:
+        - install_docker | bool
+        - ansible_facts.os_family == "RedHat"
+
+    - name: Add Docker yum repository
+      ansible.builtin.yum_repository:
+        name: docker-ce-stable
+        description: Docker CE Stable
+        baseurl: "https://download.docker.com/linux/{{ docker_rhel_repo_distro }}/$releasever/$basearch/stable"
+        enabled: true
+        gpgcheck: true
+        gpgkey: "https://download.docker.com/linux/{{ docker_rhel_repo_distro }}/gpg"
+      vars:
+        docker_rhel_repo_distro: "{{ 'fedora' if ansible_facts.distribution == 'Fedora' else 'centos' }}"
+      when:
+        - install_docker | bool
+        - ansible_facts.os_family == "RedHat"
+
+    - name: Install Docker on RHEL-like systems
+      ansible.builtin.dnf:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-buildx-plugin
+          - docker-compose-plugin
+        state: present
+      when:
+        - install_docker | bool
+        - ansible_facts.os_family == "RedHat"
+
+    - name: Start and enable Docker
+      ansible.builtin.service:
+        name: docker
+        state: started
+        enabled: true
+      when: install_docker | bool
