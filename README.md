@@ -1,29 +1,125 @@
-0. 
-```
-bash <(curl -fsSL https://raw.githubusercontent.com/shoonia69/myscripts/refs/heads/main/aio.sh)
+# myscripts
+
+Набор личных скриптов для быстрой подготовки сервера.
+
+## prep_vpn
+
+Основной инсталлятор:
+
+```bash
+prep_vpn/install.sh
 ```
 
-1. подготовка вм: апдейт, установка утилит
-```
-curl -fsSL https://raw.githubusercontent.com/shoonia69/myscripts/refs/heads/main/prep_vpn/1-prepvm.sh | bash
+Он заменяет старые раздельные скрипты подготовки VM, установки Docker и установки Portainer.
+
+### Быстрый запуск с GitHub
+
+Запустить интерактивное меню:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/shoonia69/myscripts/refs/heads/main/prep_vpn/install.sh | sudo bash
 ```
 
-2. установка докера
-```
-curl -fsSL https://raw.githubusercontent.com/shoonia69/myscripts/refs/heads/main/prep_vpn/2-dockerinstall.sh | bash
+Запустить все этапы сразу:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/shoonia69/myscripts/refs/heads/main/prep_vpn/install.sh | sudo bash -s -- --all
 ```
 
-3. установка портейнера (по желанию)
-```
-curl -fsSL https://raw.githubusercontent.com/shoonia69/myscripts/refs/heads/main/prep_vpn/3-portainerinstall.sh | bash
+### Локальный запуск
+
+```bash
+cd prep_vpn
+sudo ./install.sh
 ```
 
-4.1. установка mtproxy на порт 443 в режиме хост (443 порт должен быть свободен)
-```
-curl -fsSL https://raw.githubusercontent.com/shoonia69/myscripts/refs/heads/main/prep_vpn/4-1-mtproxy443.sh | bash
+По умолчанию откроется меню:
+
+```text
+1) System update and base utilities
+2) Install Docker
+3) Install Portainer
+a) Run all
 ```
 
-4.2. установка mtproxy на порт 10443 (переадресация в контейнер)
+Можно выбрать несколько пунктов через запятую, например `1,2`.
+
+### Запуск отдельных этапов
+
+Обновить систему и поставить базовые утилиты:
+
+```bash
+sudo ./install.sh --system
 ```
-curl -fsSL https://raw.githubusercontent.com/shoonia69/myscripts/refs/heads/main/prep_vpn/4-2-mtproxy10443.sh | bash
+
+Поставить Docker:
+
+```bash
+sudo ./install.sh --docker
+```
+
+Поставить Portainer:
+
+```bash
+sudo ./install.sh --portainer
+```
+
+Запустить все:
+
+```bash
+sudo ./install.sh --all
+```
+
+### Опции
+
+Добавить пользователя в группу `docker`:
+
+```bash
+sudo ./install.sh --docker --docker-user admin
+```
+
+Если скрипт запущен через `sudo`, пользователь по умолчанию берется из `SUDO_USER`.
+
+Пропустить проверку `docker run hello-world`:
+
+```bash
+sudo ./install.sh --all --no-hello-world
+```
+
+### Что устанавливается
+
+Этап `--system`:
+
+- обновление пакетов;
+- `nano`;
+- `tree`;
+- `tmux`;
+- `bash-completion`;
+- `qemu-guest-agent`;
+- `curl`;
+- `ca-certificates`;
+- дополнительные зависимости для Docker на Debian/Ubuntu.
+
+Этап `--docker`:
+
+- Docker Engine;
+- Docker CLI;
+- containerd;
+- Docker Buildx plugin;
+- Docker Compose plugin;
+- запуск и включение сервиса Docker.
+
+Этап `--portainer`:
+
+- создает `prep_vpn/portainer/docker-compose.yml`;
+- запускает Portainer CE LTS;
+- Portainer будет доступен на `https://SERVER_IP:9443`.
+
+## ansible-multiselect
+
+Отдельный Ansible-плейбук с мультивыбором действий и временным inventory:
+
+```bash
+cd ansible-multiselect
+./run.sh
 ```
