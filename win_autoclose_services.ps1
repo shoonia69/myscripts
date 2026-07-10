@@ -1,5 +1,0 @@
-Stop-Process -Name "Mattermost"
-Stop-Process -Name "OUTLOOK"
-Stop-Process -Name "OpenWhispr"
-Stop-Process -Name "Talks"
-Stop-Process -Name "TeamSpeak"
