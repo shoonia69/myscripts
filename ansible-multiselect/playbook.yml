@@ -10,6 +10,8 @@
     install_tmux: false
     install_bash_completion: false
     install_docker: false
+    configure_bash_aliases: false
+    bash_alias_user: "{{ ansible_user | default('root') }}"
 
   tasks:
     - name: Update apt package cache
@@ -158,3 +160,24 @@
         state: started
         enabled: true
       when: install_docker | bool
+
+    - name: Get target user passwd entry
+      ansible.builtin.getent:
+        database: passwd
+        key: "{{ bash_alias_user }}"
+      when: configure_bash_aliases | bool
+
+    - name: Add personal aliases to target user's bashrc
+      ansible.builtin.blockinfile:
+        path: "{{ ansible_facts.getent_passwd[bash_alias_user][4] }}/.bashrc"
+        create: true
+        owner: "{{ bash_alias_user }}"
+        mode: "0644"
+        marker: "# {mark} ANSIBLE MANAGED PERSONAL ALIASES"
+        block: |
+          alias dcu='docker compose up -d'
+          alias dcd='docker compose down'
+          alias dc='docker compose'
+          alias dcl='docker compose logs -f'
+          alias tmas='tmux attach-session'
+      when: configure_bash_aliases | bool

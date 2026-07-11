@@ -76,6 +76,7 @@ cat <<'MENU'
   3) Установить tmux
   4) Установить bash-completion
   5) Установить Docker
+  6) Добавить alias в .bashrc
   a) Выполнить все
 MENU
 
@@ -86,6 +87,7 @@ install_tree=false
 install_tmux=false
 install_bash_completion=false
 install_docker=false
+configure_bash_aliases=false
 
 normalize_choice() {
   printf '%s' "$1" | tr '[:upper:]' '[:lower:]' | tr -d '[:space:]'
@@ -100,12 +102,14 @@ for item in "${ITEMS[@]}"; do
     3) install_tmux=true ;;
     4) install_bash_completion=true ;;
     5) install_docker=true ;;
+    6) configure_bash_aliases=true ;;
     a|all)
       do_update=true
       install_tree=true
       install_tmux=true
       install_bash_completion=true
       install_docker=true
+      configure_bash_aliases=true
       ;;
     "")
       ;;
@@ -120,7 +124,8 @@ if [[ "$do_update" == false \
   && "$install_tree" == false \
   && "$install_tmux" == false \
   && "$install_bash_completion" == false \
-  && "$install_docker" == false ]]; then
+  && "$install_docker" == false \
+  && "$configure_bash_aliases" == false ]]; then
   echo "Ничего не выбрано."
   exit 1
 fi
@@ -146,6 +151,8 @@ PLAYBOOK_ARGS=(
   -e "install_tmux=$install_tmux"
   -e "install_bash_completion=$install_bash_completion"
   -e "install_docker=$install_docker"
+  -e "configure_bash_aliases=$configure_bash_aliases"
+  -e "bash_alias_user=$SSH_USER"
 )
 
 if [[ "$ASK_BECOME_PASS" == true ]]; then
