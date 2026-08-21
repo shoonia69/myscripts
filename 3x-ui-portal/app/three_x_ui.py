@@ -106,9 +106,7 @@ class ThreeXUIClient:
             "reset": 0,
         }
 
-    async def _resolve_inbound_ids(self) -> list[int]:
-        if not self.settings.all_inbounds:
-            return list(self.settings.inbound_ids)
+    async def list_inbound_ids(self) -> list[int]:
         response = await self._request("GET", "panel/api/inbounds/list")
         data = self._json(response)
         if response.is_error or not data.get("success") or not isinstance(data.get("obj"), list):
@@ -118,6 +116,11 @@ class ThreeXUIClient:
         if not result:
             raise PanelError("В панели 3x-ui нет доступных inbound")
         return result
+
+    async def _resolve_inbound_ids(self) -> list[int]:
+        if not self.settings.all_inbounds:
+            return list(self.settings.inbound_ids)
+        return await self.list_inbound_ids()
 
     def _subscription_url(self, sub_id: str) -> str:
         return self.settings.subscription_base_url.rstrip("/") + "/" + quote(sub_id, safe="")

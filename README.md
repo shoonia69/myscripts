@@ -125,7 +125,7 @@ cp .env.example .env
 docker compose up -d --build
 ```
 
-Поддерживает новый и legacy API 3x-ui, все inbound, повторную выдачу подписки по тому же английскому имени, веб-интерфейс и Telegram-бота с записью `tgId`/`@username` в панель. Подробности находятся в [`3x-ui-portal/README.md`](3x-ui-portal/README.md).
+Поддерживает новый и legacy API 3x-ui, все inbound, повторную выдачу подписки по тому же английскому имени, веб-интерфейс и Telegram-бота с мультивыбором панелей, админским добавлением панелей и записью `tgId`/`@username` в панель. Подробности находятся в [`3x-ui-portal/README.md`](3x-ui-portal/README.md).
 
 ## ansible-multiselect
 
