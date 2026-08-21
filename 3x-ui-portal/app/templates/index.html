@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>{{ site_title }}</title>
+  <link rel="stylesheet" href="{{ url_for('static', path='styles.css') }}">
+  <script src="{{ url_for('static', path='app.js') }}" defer></script>
+</head>
+<body>
+  <main class="shell">
+    <section class="card" aria-labelledby="title">
+      <div class="eyebrow"><span></span> защищённое подключение</div>
+      <h1 id="title">{{ site_title }}</h1>
+      <p class="lead">Укажите имя на английском — мы создадим персональный профиль и сразу выдадим ссылку для подключения.</p>
+
+      {% if error %}
+      <div class="alert" role="alert">{{ error }}</div>
+      {% endif %}
+
+      {% if subscription_url %}
+      <div class="success" aria-live="polite">
+        <div class="success-icon">✓</div>
+        <h2>Доступ готов, {{ name }}!</h2>
+        <p>Скопируйте ссылку и добавьте её в приложение с поддержкой подписок.</p>
+        <label for="subscription">Ссылка на подписку</label>
+        <div class="copy-row">
+          <input id="subscription" value="{{ subscription_url }}" readonly>
+          <button class="copy-button" type="button" data-copy="subscription">Скопировать ссылку</button>
+        </div>
+        <p class="copy-status" aria-live="polite"></p>
+      </div>
+      {% else %}
+      <form method="post" autocomplete="off">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <div class="trap" aria-hidden="true">
+          <label>Ваш сайт <input name="website" tabindex="-1" autocomplete="off"></label>
+        </div>
+        <label for="name">Ваше имя на английском</label>
+        <input id="name" name="name" value="{{ name or '' }}" minlength="2" maxlength="64" pattern="[A-Za-z]+(?:[ '-][A-Za-z]+)*" placeholder="Например, John Smith" required autofocus>
+        <button class="submit-button" type="submit">Создать подключение <span>→</span></button>
+      </form>
+      <div class="features">
+        <span>Без регистрации</span><span>Персональная ссылка</span><span>Готово за несколько секунд</span>
+      </div>
+      {% endif %}
+    </section>
+    <p class="footer">Не передавайте персональную ссылку другим людям.</p>
+  </main>
+</body>
+</html>

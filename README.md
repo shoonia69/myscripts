@@ -115,6 +115,18 @@ sudo ./install.sh --all --no-hello-world
 - запускает Portainer CE LTS;
 - Portainer будет доступен на `https://SERVER_IP:9443`.
 
+## 3x-ui-portal
+
+Self-service сайт для создания клиентов 3x-ui и выдачи ссылок подписки:
+
+```bash
+cd 3x-ui-portal
+cp .env.example .env
+docker compose up -d --build
+```
+
+Поддерживает новый и legacy API 3x-ui, все inbound, повторную выдачу подписки по тому же английскому имени и настройку через `.env`. Подробности находятся в [`3x-ui-portal/README.md`](3x-ui-portal/README.md).
+
 ## ansible-multiselect
 
 Отдельный Ansible-плейбук с мультивыбором действий и временным inventory:
