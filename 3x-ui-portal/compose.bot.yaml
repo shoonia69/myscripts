@@ -4,6 +4,8 @@ services:
     container_name: three-x-ui-telegram-bot
     command: ["python", "-m", "app.telegram_bot"]
     restart: unless-stopped
+    healthcheck:
+      disable: true
     env_file:
       - ${ENV_FILE:-.env}
     environment:
