@@ -1,10 +1,12 @@
-# 3x-ui Self-Service Portal
+# 3x-ui Self-Service Portal и Telegram Bot
 
-Небольшой сайт на FastAPI: пользователь вводит имя, приложение создаёт клиента в 3x-ui и показывает персональную ссылку на подписку.
+Сайт и Telegram-бот используют общую интеграцию с 3x-ui: пользователь указывает имя на английском, приложение создаёт клиента и возвращает персональную ссылку подписки.
 
 ## Возможности
 
-- одна форма без регистрации;
+- одна веб-форма без регистрации;
+- Telegram-бот с выдачей подписки через inline-кнопку;
+- Telegram ID записывается в поле `tgId`, а имя и `@username` — в комментарий клиента 3x-ui;
 - современный API `/panel/api/clients/add` и старый `/panel/api/inbounds/addClient`;
 - API Token (рекомендуется) либо логин/пароль панели;
 - один или несколько inbound;
@@ -47,6 +49,42 @@ curl http://127.0.0.1:8080/healthz
 
 Сайт будет доступен на `http://SERVER_IP:8080`.
 
+## Telegram-бот
+
+1. Создайте бота через `@BotFather` и добавьте токен в `.env`:
+
+   ```dotenv
+   TELEGRAM_BOT_TOKEN=1234567890:your-bot-token
+   ```
+
+2. Запустите сайт и бота вместе:
+
+   ```bash
+   docker compose -f compose.yaml -f compose.bot.yaml up -d --build
+   docker compose -f compose.yaml -f compose.bot.yaml ps
+   ```
+
+   Только бот, без сайта:
+
+   ```bash
+   docker compose -f compose.bot.yaml up -d --build
+   ```
+
+3. Откройте бота и отправьте `/start`. Бот попросит имя на английском и вернёт кнопку перехода к подписке.
+
+Пользователь обязан иметь Telegram username. В 3x-ui создаётся отдельный стабильный клиент для сочетания имени и Telegram ID:
+
+- `tgId` содержит числовой Telegram ID;
+- `comment` содержит введённое имя и `@username`;
+- одинаковое имя от одного Telegram-аккаунта возвращает прежнюю подписку;
+- одинаковые имена от разных Telegram-аккаунтов создают разные подписки.
+
+Логи бота:
+
+```bash
+docker compose -f compose.yaml -f compose.bot.yaml logs -f telegram-bot
+```
+
 ## Подключение старой панели
 
 Если в панели нет API Token, удалите или закомментируйте `XUI_API_TOKEN` и задайте:
@@ -78,6 +116,7 @@ XUI_API_MODE=auto
 | `CLIENT_FLOW` | нет | Например `xtls-rprx-vision`, если inbound это поддерживает |
 | `RATE_LIMIT_PER_HOUR` | нет | Число заявок с одного IP в час |
 | `SITE_TITLE` | нет | Заголовок сайта |
+| `TELEGRAM_BOT_TOKEN` | для бота | Токен от `@BotFather` |
 
 **Не меняйте `APP_SECRET` после ввода в эксплуатацию.** Из имени и этого секрета детерминированно формируются email-идентификатор, UUID, пароль и `subId`. Изменение секрета создаст для прежних имён новые записи.
 

@@ -99,7 +99,7 @@ class ThreeXUIClient:
             "totalGB": self.settings.total_gb * 1024 * 1024 * 1024,
             "expiryTime": expiry,
             "enable": True,
-            "tgId": 0,
+            "tgId": identity.telegram_id,
             "subId": identity.sub_id,
             "flow": self.settings.flow,
             "comment": identity.comment,

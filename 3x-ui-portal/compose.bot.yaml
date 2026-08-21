@@ -1,0 +1,13 @@
+services:
+  telegram-bot:
+    build: .
+    container_name: three-x-ui-telegram-bot
+    command: ["python", "-m", "app.telegram_bot"]
+    restart: unless-stopped
+    env_file:
+      - ${ENV_FILE:-.env}
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp:size=16m,mode=1777

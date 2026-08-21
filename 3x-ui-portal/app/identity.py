@@ -27,6 +27,7 @@ class ClientIdentity:
     password: str
     sub_id: str
     comment: str
+    telegram_id: int = 0
 
 
 def normalize_name(value: str) -> str:
@@ -46,19 +47,57 @@ def _slug(name: str) -> str:
     return re.sub(r"[^a-z0-9]+", "-", ascii_name).strip("-")[:36] or "user"
 
 
-def build_identity(value: str, secret: str) -> ClientIdentity:
-    name = normalize_name(value)
-    stable = _digest(name, secret, "identity")
+def _build_identity(
+    *,
+    stable_key: str,
+    secret: str,
+    email_prefix: str,
+    comment: str,
+    telegram_id: int = 0,
+) -> ClientIdentity:
+    stable = _digest(stable_key, secret, "identity")
     suffix = stable.hex()[:10]
-    raw_uuid = bytearray(_digest(name, secret, "uuid")[:16])
+    raw_uuid = bytearray(_digest(stable_key, secret, "uuid")[:16])
     raw_uuid[6] = (raw_uuid[6] & 0x0F) | 0x50
     raw_uuid[8] = (raw_uuid[8] & 0x3F) | 0x80
-    sub_id = base64.b32encode(_digest(name, secret, "subscription")[:13]).decode().rstrip("=").lower()[:20]
-    password = base64.urlsafe_b64encode(_digest(name, secret, "password")[:18]).decode().rstrip("=")
+    sub_id = base64.b32encode(_digest(stable_key, secret, "subscription")[:13]).decode().rstrip("=").lower()[:20]
+    password = base64.urlsafe_b64encode(_digest(stable_key, secret, "password")[:18]).decode().rstrip("=")
     return ClientIdentity(
-        email=f"{_slug(name)}-{suffix}",
+        email=f"{email_prefix}-{suffix}",
         client_id=str(uuid.UUID(bytes=bytes(raw_uuid))),
         password=password,
         sub_id=sub_id,
+        comment=comment,
+        telegram_id=telegram_id,
+    )
+
+
+def build_identity(value: str, secret: str) -> ClientIdentity:
+    name = normalize_name(value)
+    return _build_identity(
+        stable_key=name,
+        secret=secret,
+        email_prefix=_slug(name),
         comment=name,
+    )
+
+
+def build_telegram_identity(
+    value: str,
+    secret: str,
+    telegram_id: int,
+    username: str | None,
+) -> ClientIdentity:
+    name = normalize_name(value)
+    normalized_username = (username or "").strip().lstrip("@")
+    if not re.fullmatch(r"[A-Za-z0-9_]{5,32}", normalized_username):
+        raise ValueError("Для получения подписки установите Telegram username.")
+    if telegram_id <= 0:
+        raise ValueError("Некорректный Telegram ID.")
+    return _build_identity(
+        stable_key=f"{name}|telegram:{telegram_id}",
+        secret=secret,
+        email_prefix=f"{_slug(name)}-tg{telegram_id}",
+        comment=f"{name} | Telegram: @{normalized_username}",
+        telegram_id=telegram_id,
     )
