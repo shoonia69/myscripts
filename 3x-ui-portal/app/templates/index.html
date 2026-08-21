@@ -30,6 +30,9 @@
           <button class="copy-button" type="button" data-copy="subscription">Скопировать ссылку</button>
         </div>
         <p class="copy-status" aria-live="polite"></p>
+        <a class="open-button" href="{{ subscription_url }}" target="_blank" rel="noopener noreferrer">
+          Перейти по ссылке подписки <span>↗</span>
+        </a>
       </div>
       {% else %}
       <form method="post" autocomplete="off">

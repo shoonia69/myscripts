@@ -33,6 +33,8 @@ def test_form_provisions_client_and_shows_subscription_link() -> None:
     assert received == ["John Smith"]
     assert "https://sub.example/sub/" in response.text
     assert "Скопировать ссылку" in response.text
+    assert 'href="https://sub.example/sub/' in response.text
+    assert "Перейти по ссылке подписки" in response.text
 
 
 def test_invalid_csrf_is_rejected() -> None:
