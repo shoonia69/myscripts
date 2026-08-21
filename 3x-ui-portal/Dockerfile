@@ -11,7 +11,9 @@ COPY pyproject.toml uv.lock ./
 RUN uv sync --frozen --no-dev --no-install-project
 
 COPY app ./app
-RUN useradd --create-home --uid 10001 portal && chown -R portal:portal /app
+RUN useradd --create-home --uid 10001 portal \
+    && mkdir -p /data \
+    && chown -R portal:portal /app /data
 USER portal
 
 EXPOSE 8080
