@@ -16,7 +16,105 @@
   <div style="color:var(--muted)">
     {{ emp.position or '—' }}{% if emp.position and emp.department %} · {% endif %}{{ emp.department or '' }}
     {% if emp.salary %} · <strong style="color:var(--text)">{{ emp.salary }}</strong>{% endif %}
+    {% if emp.hire_date %} · <span title="Дата приёма на работу">принят с {{ (emp.hire_date or '')[:10] }}</span>{% endif %}
   </div>
+</div>
+
+<!-- История изменений должности/зарплаты -->
+<div class="card">
+  <div class="toolbar" style="margin-bottom:8px">
+    <div class="panel-title" style="margin:0">История изменения должности и зарплаты</div>
+    <div class="spacer"></div>
+    <details class="inline-add">
+      <summary class="btn small">+ Добавить запись</summary>
+      <div class="card" style="margin-top:10px;padding:14px">
+        <form method="post" action="{{ url_for('history_add', eid=emp.id) }}">
+          <div class="form-grid">
+            <div>
+              <label>Дата изменения *</label>
+              <input type="date" name="change_date" required>
+            </div>
+            <div>
+              <label>Должность</label>
+              <select name="position_id">
+                <option value="">— не менялась —</option>
+                {% for p in positions %}
+                  <option value="{{ p.id }}">{{ p.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div>
+              <label>Зарплата</label>
+              <input type="text" name="salary" placeholder="Например: 130 000 ₽">
+            </div>
+            <div>
+              <label>Комментарий</label>
+              <input type="text" name="note" placeholder="Например: повышение / индексация">
+            </div>
+          </div>
+          <div class="btn-row">
+            <button class="btn primary small" type="submit">Сохранить запись</button>
+          </div>
+        </form>
+      </div>
+    </details>
+  </div>
+
+  {% if history %}
+    {% for h in history %}
+      <div class="semester-block" style="margin-bottom:12px">
+        <div class="semester-title">
+          <strong>{{ (h.change_date or '')[:10] }}</strong>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <details class="inline-edit">
+              <summary class="btn small" style="cursor:pointer">Правка</summary>
+              <div class="card" style="margin-top:8px;padding:12px">
+                <form method="post" action="{{ url_for('history_edit', hid=h.id) }}">
+                  <div class="form-grid">
+                    <div>
+                      <label>Дата</label>
+                      <input type="date" name="change_date" value="{{ h.change_date }}" required>
+                    </div>
+                    <div>
+                      <label>Должность</label>
+                      <select name="position_id">
+                        <option value="">— не менялась —</option>
+                        {% for p in positions %}
+                          <option value="{{ p.id }}" {{ 'selected' if h.position_id == p.id else '' }}>{{ p.name }}</option>
+                        {% endfor %}
+                      </select>
+                    </div>
+                    <div>
+                      <label>Зарплата</label>
+                      <input type="text" name="salary" value="{{ h.salary }}">
+                    </div>
+                    <div>
+                      <label>Комментарий</label>
+                      <input type="text" name="note" value="{{ h.note }}">
+                    </div>
+                  </div>
+                  <div class="btn-row">
+                    <button class="btn primary small" type="submit">Сохранить</button>
+                  </div>
+                </form>
+              </div>
+            </details>
+            <form method="post" action="{{ url_for('history_delete', hid=h.id) }}"
+                  onsubmit="return confirm('Удалить запись истории?')">
+              <button class="btn small danger" type="submit">Удалить</button>
+            </form>
+          </div>
+        </div>
+        <div style="color:var(--text)">
+          {% if h.position_name %}<span class="tag tag-1H">{{ h.position_name }}</span>{% endif %}
+          {% if h.salary %} <strong style="margin-left:4px">{{ h.salary }}</strong>{% endif %}
+        </div>
+        {% if h.note %}<div class="sub" style="margin-top:4px">{{ h.note }}</div>{% endif %}
+      </div>
+    {% endfor %}
+  {% else %}
+    <div class="empty">Пока нет записей об изменениях должности и зарплаты. Добавьте первую — увидите историю по датам.</div>
+  {% endif %}
 </div>
 
 <!-- Случайные заметки о сотруднике -->

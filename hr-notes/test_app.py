@@ -143,8 +143,50 @@ check("должность удалена из справочника", len(dbq("
 # --- фильтрация дашборда по отделу и должности ---
 # вернём Иванову отдел (выше он был сброшен тестом) — чтобы был тест-дата
 c.post(f"/employee/{eid}/edit", data={
-    "name": "Иванов Иван", "position_id": str(p1), "department_id": str(d1), "salary": "140 000 ₽"
+    "name": "Иванов Иван", "position_id": str(p1), "department_id": str(d1), "salary": "140 000 ₽",
+    "hire_date": "2023-04-10"
 }, follow_redirects=True)
+check("дата приёма сохранена", dbq("SELECT hire_date FROM employees WHERE id=?", (eid,))[0]["hire_date"] == "2023-04-10")
+body = c.get(f"/employee/{eid}").get_data(as_text=True)
+check("дата приёма видна в карточке", "принят с 2023-04-10" in body)
+
+# --- история изменений должности/зарплаты ---
+# p2 (Старший инженер) была удалена тестом выше — пересоздаём для истории
+c.post("/catalog/position/add", data={"name": "Старший инженер"})
+p2 = dbq("SELECT id FROM positions WHERE name='Старший инженер'")[0]["id"]
+check("в карточке есть история", "История изменения должности и зарплаты" in body)
+c.post(f"/employee/{eid}/history/add", data={
+    "change_date": "2024-06-01", "position_id": str(p1), "salary": "150 000 ₽", "note": "повышение"
+}, follow_redirects=True)
+c.post(f"/employee/{eid}/history/add", data={
+    "change_date": "2025-01-15", "position_id": str(p2), "salary": "160 000 ₽", "note": "главный инженер"
+}, follow_redirects=True)
+r = c.get(f"/employee/{eid}").get_data(as_text=True)
+check("записи истории видны", "2025-01-15" in r and "2024-06-01" in r)
+check("должность из справочника в истории", "Старший инженер" in r)
+check("комментарий в истории", "главный инженер" in r)
+
+# сортировка: новейшая запись первая
+r = c.get(f"/employee/{eid}").get_data(as_text=True)
+i1, i2 = r.find("2025-01-15"), r.find("2024-06-01")
+check("история отсортирована (новая сверху)", i1 != -1 and i2 != -1 and i1 < i2)
+
+# редактирование записи истории
+hid = dbq("SELECT id FROM employee_history WHERE note='повышение'")[0]["id"]
+c.post(f"/history/{hid}/edit", data={
+    "change_date": "2024-07-01", "position_id": str(p1), "salary": "155 000 ₽", "note": "повышение (правка)"
+}, follow_redirects=True)
+r = c.get(f"/employee/{eid}").get_data(as_text=True)
+check("история редактируется", "повышение (правка)" in r and "2024-07-01" in r)
+
+# удаление записи истории
+cnt = len(dbq("SELECT * FROM employee_history WHERE employee_id=?", (eid,)))
+c.post(f"/history/{hid}/delete")
+check("история удаляется", len(dbq("SELECT * FROM employee_history WHERE employee_id=?", (eid,))) == cnt - 1)
+
+# валидация: история без даты отклоняется
+c.post(f"/employee/{eid}/history/add", data={"change_date": "", "position_id": "", "salary": "", "note": ""})
+check("история без даты отклонена", len(dbq(f"SELECT * FROM employee_history WHERE employee_id={eid} AND change_date=''")) == 0)
 
 # второй сотрудник в другом отделе и другой должности
 c.post("/catalog/position/add", data={"name": "Стажёр"})

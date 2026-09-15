@@ -65,9 +65,20 @@ CREATE TABLE IF NOT EXISTS employees (
     position_id   INTEGER REFERENCES positions(id) ON DELETE SET NULL,
     department_id INTEGER REFERENCES departments(id) ON DELETE SET NULL,
     salary        TEXT DEFAULT '',
+    hire_date     TEXT DEFAULT '',
     notes         TEXT DEFAULT '',
     active        INTEGER DEFAULT 1,
     created_at    TEXT DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS employee_history (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    employee_id INTEGER NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
+    change_date TEXT NOT NULL,
+    position_id INTEGER REFERENCES positions(id) ON DELETE SET NULL,
+    salary      TEXT DEFAULT '',
+    note        TEXT DEFAULT '',
+    created_at  TEXT DEFAULT (datetime('now'))
 );
 
 CREATE TABLE IF NOT EXISTS year_records (
@@ -109,6 +120,12 @@ def init_db():
     if "notes" not in cols:
         db.execute("ALTER TABLE employees ADD COLUMN notes TEXT DEFAULT ''")
         print("[HR-Notes] Миграция employees: добавлена колонка notes")
+
+    # Миграция: добавление колонки hire_date (дата приёма)
+    cols = {r[1] for r in db.execute("PRAGMA table_info(employees)").fetchall()}
+    if "hire_date" not in cols:
+        db.execute("ALTER TABLE employees ADD COLUMN hire_date TEXT DEFAULT ''")
+        print("[HR-Notes] Миграция employees: добавлена колонка hire_date")
 
     # Починка FK-ссылок, сломанных переименованием employees (см. _migrate_employees).
     # SQLite при ALTER TABLE RENAME переписывает ссылки на employees в дочерние
@@ -435,19 +452,20 @@ def _save_employee(eid):
     pid = _clean_int(request.form.get("position_id"))
     did = _clean_int(request.form.get("department_id"))
     salary = request.form.get("salary", "").strip()
+    hire_date = request.form.get("hire_date", "").strip()
 
     if eid is None:
         cur = db.execute(
-            "INSERT INTO employees (name, position_id, department_id, salary) "
-            "VALUES (?,?,?,?)",
-            (name, pid, did, salary),
+            "INSERT INTO employees (name, position_id, department_id, salary, hire_date) "
+            "VALUES (?,?,?,?,?)",
+            (name, pid, did, salary, hire_date),
         )
         eid = cur.lastrowid
     else:
         db.execute(
-            "UPDATE employees SET name=?, position_id=?, department_id=?, salary=? "
+            "UPDATE employees SET name=?, position_id=?, department_id=?, salary=?, hire_date=? "
             "WHERE id=?",
-            (name, pid, did, salary, eid),
+            (name, pid, did, salary, hire_date, eid),
         )
     db.commit()
     flash("Сотрудник сохранён", "ok")
@@ -489,6 +507,19 @@ def employee_view(eid):
         (eid,),
     ).fetchall()
 
+    # История изменений должности/зарплаты (датированная)
+    history = db.execute(
+        """
+        SELECT h.*, p.name AS position_name
+        FROM employee_history h
+        LEFT JOIN positions p ON p.id = h.position_id
+        WHERE h.employee_id=?
+        ORDER BY h.change_date DESC, h.id DESC
+        """,
+        (eid,),
+    ).fetchall()
+    positions, _ = _cat_options(db)
+
     return render_template(
         "employee_view.html",
         emp=emp,
@@ -497,6 +528,8 @@ def employee_view(eid):
         records=records,
         semesters=SEMESTERS,
         meetings=meetings,
+        history=history,
+        positions=positions,
     )
 
 
@@ -519,6 +552,56 @@ def employee_notes(eid):
     db.commit()
     flash("Заметки сохранены", "ok")
     return redirect(url_for("employee_view", eid=eid))
+
+
+@app.route("/employee/<int:eid>/history/add", methods=["POST"])
+@login_required
+def history_add(eid):
+    db = get_db()
+    change_date = request.form.get("change_date", "").strip()
+    if not change_date:
+        flash("Дата изменения обязательна", "error")
+        return redirect(url_for("employee_view", eid=eid))
+    db.execute(
+        "INSERT INTO employee_history (employee_id, change_date, position_id, salary, note) "
+        "VALUES (?,?,?,?,?)",
+        (eid, change_date, _clean_int(request.form.get("position_id")),
+         request.form.get("salary", "").strip(), request.form.get("note", "").strip()),
+    )
+    db.commit()
+    flash("Запись истории добавлена", "ok")
+    return redirect(url_for("employee_view", eid=eid))
+
+
+@app.route("/history/<int:hid>/edit", methods=["POST"])
+@login_required
+def history_edit(hid):
+    db = get_db()
+    rec = db.execute("SELECT * FROM employee_history WHERE id=?", (hid,)).fetchone()
+    if not rec:
+        abort(404)
+    change_date = request.form.get("change_date", rec["change_date"]).strip()
+    db.execute(
+        "UPDATE employee_history SET change_date=?, position_id=?, salary=?, note=? WHERE id=?",
+        (change_date, _clean_int(request.form.get("position_id")),
+         request.form.get("salary", "").strip(), request.form.get("note", "").strip(), hid),
+    )
+    db.commit()
+    flash("Запись истории обновлена", "ok")
+    return redirect(url_for("employee_view", eid=rec["employee_id"]))
+
+
+@app.route("/history/<int:hid>/delete", methods=["POST"])
+@login_required
+def history_delete(hid):
+    db = get_db()
+    rec = db.execute("SELECT * FROM employee_history WHERE id=?", (hid,)).fetchone()
+    if rec:
+        db.execute("DELETE FROM employee_history WHERE id=?", (hid,))
+        db.commit()
+        flash("Запись истории удалена", "ok")
+        return redirect(url_for("employee_view", eid=rec["employee_id"]))
+    abort(404)
 
 
 # --------------------------------------------------------------------------- #
