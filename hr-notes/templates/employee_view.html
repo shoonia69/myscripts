@@ -19,6 +19,19 @@
   </div>
 </div>
 
+<!-- Случайные заметки о сотруднике -->
+<div class="card">
+  <form method="post" action="{{ url_for('employee_notes', eid=emp.id) }}">
+    <div class="toolbar" style="margin-bottom:8px">
+      <div class="panel-title" style="margin:0">Заметки</div>
+      <div class="spacer"></div>
+      <button class="btn small primary" type="submit">Сохранить</button>
+    </div>
+    <textarea name="notes" style="min-height:110px"
+              placeholder="Случайные заметки о сотруднике: черты характера, пожелания по развитию, подвижки, что угодно вне привязки к полугодию.">{{ emp.notes or '' }}</textarea>
+  </form>
+</div>
+
 <!-- Выбор года -->
 <div class="toolbar">
   <div class="year-tabs">

@@ -125,6 +125,15 @@ c.post(f"/employee/{eid}/meeting/new", data={
 body = c.get(f"/employee/{eid}").get_data(as_text=True)
 check("встреча добавлена", "Обсудили задачи на квартал" in body)
 
+# --- случайные заметки (общие, вне полугодий) ---
+check("в карточке есть блок Заметки", "Заметки" in c.get(f"/employee/{eid}").get_data(as_text=True))
+c.post(f"/employee/{eid}/notes", data={"notes": "Любит работу с API, мечтает о менторстве."}, follow_redirects=True)
+r = c.get(f"/employee/{eid}").get_data(as_text=True)
+check("заметка сохранена и видна", "Любит работу с API" in r)
+c.post(f"/employee/{eid}/notes", data={"notes": "Обновлённая заметка без прошлого текста."}, follow_redirects=True)
+r = c.get(f"/employee/{eid}").get_data(as_text=True)
+check("заметка редактируется (перезапись)", "Обновлённая заметка" in r and "Любит работу с API" not in r)
+
 # --- удаление справочника снимает ссылку (SET NULL) ---
 c.post(f"/catalog/position/{p2}/delete")
 emp4 = dbq("SELECT * FROM employees WHERE id=?", (eid,))[0]

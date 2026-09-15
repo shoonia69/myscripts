@@ -65,6 +65,7 @@ CREATE TABLE IF NOT EXISTS employees (
     position_id   INTEGER REFERENCES positions(id) ON DELETE SET NULL,
     department_id INTEGER REFERENCES departments(id) ON DELETE SET NULL,
     salary        TEXT DEFAULT '',
+    notes         TEXT DEFAULT '',
     active        INTEGER DEFAULT 1,
     created_at    TEXT DEFAULT (datetime('now'))
 );
@@ -102,6 +103,12 @@ def init_db():
     cols = {r[1] for r in db.execute("PRAGMA table_info(employees)").fetchall()}
     if "position" in cols and "position_id" not in cols:
         _migrate_employees(db)
+
+    # Миграция: добавление колонки notes (общие заметки) к уже существующим БД
+    cols = {r[1] for r in db.execute("PRAGMA table_info(employees)").fetchall()}
+    if "notes" not in cols:
+        db.execute("ALTER TABLE employees ADD COLUMN notes TEXT DEFAULT ''")
+        print("[HR-Notes] Миграция employees: добавлена колонка notes")
 
     db.commit()
     db.close()
@@ -452,6 +459,17 @@ def employee_delete(eid):
     db.commit()
     flash("Сотрудник удалён", "ok")
     return redirect(url_for("index"))
+
+
+@app.route("/employee/<int:eid>/notes", methods=["POST"])
+@login_required
+def employee_notes(eid):
+    db = get_db()
+    notes = request.form.get("notes", "")
+    db.execute("UPDATE employees SET notes=? WHERE id=?", (notes, eid))
+    db.commit()
+    flash("Заметки сохранены", "ok")
+    return redirect(url_for("employee_view", eid=eid))
 
 
 # --------------------------------------------------------------------------- #
