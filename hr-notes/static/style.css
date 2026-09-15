@@ -76,6 +76,18 @@ a:hover { text-decoration: underline; }
 .year-tab.active { background: var(--accent); border-color: var(--accent); color: #04121f; font-weight: 600; }
 .year-tab:hover { text-decoration: none; color: var(--text); }
 
+/* ---------- filters ---------- */
+.filter-panel { padding: 14px 20px; }
+.filter-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.filter-row + .filter-row { margin-top: 10px; }
+.filter-label { color: var(--muted); font-size: 13px; font-weight: 600; min-width: 64px; }
+.chip {
+  padding: 4px 13px; border-radius: 16px; border: 1px solid var(--border);
+  background: var(--panel2); color: var(--muted); font-size: 13px; cursor: pointer;
+}
+.chip:hover { text-decoration: none; color: var(--text); border-color: var(--accent); }
+.chip.active { background: var(--accent); border-color: var(--accent); color: #04121f; font-weight: 600; }
+
 /* ---------- table ---------- */
 .table-wrap { overflow-x: auto; }
 table { width: 100%; border-collapse: collapse; }

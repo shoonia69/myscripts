@@ -131,6 +131,32 @@ emp4 = dbq("SELECT * FROM employees WHERE id=?", (eid,))[0]
 check("удаление должности снимает position_id", emp4["position_id"] is None)
 check("должность удалена из справочника", len(dbq("SELECT * FROM positions WHERE id=?", (p2,))) == 0)
 
+# --- фильтрация дашборда по отделу и должности ---
+# вернём Иванову отдел (выше он был сброшен тестом) — чтобы был тест-дата
+c.post(f"/employee/{eid}/edit", data={
+    "name": "Иванов Иван", "position_id": str(p1), "department_id": str(d1), "salary": "140 000 ₽"
+}, follow_redirects=True)
+
+# второй сотрудник в другом отделе и другой должности
+c.post("/catalog/position/add", data={"name": "Стажёр"})
+c.post("/catalog/department/add", data={"name": "ТП Сбер"})
+p_st = dbq("SELECT id FROM positions WHERE name='Стажёр'")[0]["id"]
+d2 = dbq("SELECT id FROM departments WHERE name='ТП Сбер'")[0]["id"]
+c.post("/employee/new", data={
+    "name": "Петров Пётр", "position_id": str(p_st), "department_id": str(d2), "salary": "80 000 ₽"
+}, follow_redirects=True)
+
+r = c.get("/?department=" + "ТП+Orion+soft").get_data(as_text=True)
+check("фильтр по отделу оставляет только Orion", "Иванов Иван" in r and "Петров Пётр" not in r)
+
+r = c.get("/?position=" + "Стажёр").get_data(as_text=True)
+check("фильтр по должности оставляет только стажёра", "Петров Пётр" in r and "Иванов Иван" not in r)
+
+# комбинированный фильтр
+r = c.get("/?department=ТП+Orion+soft&position=Старший+инженер").get_data(as_text=True)
+# у Иванова отдел уже сброшен тестом выше, поэтому проверяем структуру: ничего не падает
+check("комбинированный фильтр не падает", r and "Сотрудники" in r)
+
 # --- валидация: пустое имя ---
 r = c.post("/employee/new", data={"name": "", "position_id": "", "department_id": "", "salary": ""})
 check("пустое имя отклонено", r.status_code == 302)

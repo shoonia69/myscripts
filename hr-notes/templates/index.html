@@ -6,7 +6,7 @@
   <div class="year-tabs">
     {% for y in years %}
       <a class="year-tab {{ 'active' if y == year else '' }}"
-         href="{{ url_for('index', year=y) }}">{{ y }}</a>
+         href="{{ url_for('index', year=y, department=sel_department, position=sel_position) }}">{{ y }}</a>
     {% endfor %}
     {% if not years %}
       <span class="year-tab active">{{ year }}</span>
@@ -16,8 +16,38 @@
   <a class="btn primary" href="{{ url_for('employee_new') }}">+ Добавить сотрудника</a>
 </div>
 
+<!-- Фильтры: отдел (вкладки) и должность (список) -->
+<div class="card filter-panel">
+  <div class="filter-row">
+    <span class="filter-label">Отдел:</span>
+    <a class="chips chip {{ 'active' if not sel_department else '' }}"
+       href="{{ url_for('index', year=year, position=sel_position) }}">Все</a>
+    {% for d in departments %}
+      <a class="chips chip {{ 'active' if d == sel_department else '' }}"
+         href="{{ url_for('index', year=year, department=d, position=sel_position) }}">{{ d }}</a>
+    {% endfor %}
+  </div>
+  <div class="filter-row">
+    <label class="filter-label" for="pos-filter" style="margin:0">Должность:</label>
+    <select id="pos-filter" name="position" onchange="location.href=this.value" style="max-width:280px">
+      <option value="{{ url_for('index', year=year, department=sel_department) }}">— все должности —</option>
+      {% for p in positions %}
+        <option value="{{ url_for('index', year=year, department=sel_department, position=p) }}"
+                {{ 'selected' if p == sel_position else '' }}>{{ p }}</option>
+      {% endfor %}
+    </select>
+    {% if sel_department or sel_position %}
+      <a class="btn small" href="{{ url_for('index', year=year) }}">✕ Сбросить фильтры</a>
+    {% endif %}
+  </div>
+</div>
+
 <div class="card">
-  <div class="panel-title">Сотрудники · {{ year }} год</div>
+  <div class="panel-title">Сотрудники · {{ year }} год
+    {% if sel_department or sel_position %}
+      <span class="sub" style="font-size:13px">(отфильтровано)</span>
+    {% endif %}
+  </div>
   {% if employees %}
   <div class="table-wrap">
     <table>
@@ -60,7 +90,7 @@
     </table>
   </div>
   {% else %}
-    <div class="empty">Пока нет сотрудников. Добавьте первого — откроется вкладка.</div>
+    <div class="empty">Нет сотрудников по выбранным фильтрам.</div>
   {% endif %}
 </div>
 

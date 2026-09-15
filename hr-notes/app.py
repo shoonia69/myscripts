@@ -195,8 +195,30 @@ def index():
     if year is None:
         year = all_years[0] if all_years else datetime.now().year
 
+    # Фильтры по отделу и должности
+    department = request.args.get("department", "").strip()
+    position = request.args.get("position", "").strip()
+
+    all_departments = [r["name"] for r in db.execute(
+        "SELECT DISTINCT d.name FROM departments d "
+        "JOIN employees e ON e.department_id = d.id WHERE e.active = 1 "
+        "ORDER BY d.name").fetchall()]
+    all_positions = [r["name"] for r in db.execute(
+        "SELECT DISTINCT p.name FROM positions p "
+        "JOIN employees e ON e.position_id = p.id WHERE e.active = 1 "
+        "ORDER BY p.name").fetchall()]
+
+    where = ["e.active = 1"]
+    params = [year]
+    if department:
+        where.append("d.name = ?")
+        params.append(department)
+    if position:
+        where.append("p.name = ?")
+        params.append(position)
+
     rows = db.execute(
-        """
+        f"""
         SELECT e.*, p.name AS position, d.name AS department,
                yr.semester, yr.goals_employee, yr.proposals_manager,
                yr.wishes_employee, yr.comments, yr.updated_at
@@ -205,10 +227,10 @@ def index():
         LEFT JOIN departments d ON d.id = e.department_id
         LEFT JOIN year_records yr
                ON yr.employee_id = e.id AND yr.year = ?
-        WHERE e.active = 1
+        WHERE {' AND '.join(where)}
         ORDER BY d.name, e.name
         """,
-        (year,),
+        tuple(params),
     ).fetchall()
 
     employees = {}
@@ -234,6 +256,10 @@ def index():
         years=all_years,
         year=year,
         semesters=SEMESTERS,
+        departments=all_departments,
+        positions=all_positions,
+        sel_department=department,
+        sel_position=position,
     )
 
 
