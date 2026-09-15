@@ -149,6 +149,24 @@ details.inline-add summary::-webkit-details-marker,
 details.inline-edit summary::-webkit-details-marker { display: none; }
 details.inline-add summary:hover, details.inline-edit summary:hover { border-color: var(--accent); color: var(--text); }
 
+/* ---------- accordion (спойлеры блоков) ---------- */
+details.accordion { padding: 0; overflow: hidden; }
+details.accordion > summary {
+  list-style: none; cursor: pointer; padding: 14px 20px;
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+}
+details.accordion > summary::-webkit-details-marker { display: none; }
+details.accordion > summary:hover { background: rgba(79,140,255,.05); }
+details.accordion[open] > summary { border-bottom: 1px solid var(--border); background: rgba(79,140,255,.06); }
+.acc-title { font-weight: 600; font-size: 16px; }
+.acc-count { color: var(--muted); font-size: 13px; }
+.acc-toggle {
+  margin-left: auto; color: var(--muted); font-size: 12px; opacity: .8;
+  font-weight: 400; text-transform: none; letter-spacing: 0;
+}
+details.accordion > summary .mktoggle { color: var(--muted); font-size: 15px; }
+.acc-body { padding: 16px 20px; }
+
 /* ---------- login ---------- */
 .login-wrap { max-width: 380px; margin: 10vh auto; }
 .login-card { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 32px; }

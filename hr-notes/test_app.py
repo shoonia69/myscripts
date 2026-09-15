@@ -154,7 +154,12 @@ check("дата приёма видна в карточке", "принят с 2
 # p2 (Старший инженер) была удалена тестом выше — пересоздаём для истории
 c.post("/catalog/position/add", data={"name": "Старший инженер"})
 p2 = dbq("SELECT id FROM positions WHERE name='Старший инженер'")[0]["id"]
+body = c.get(f"/employee/{eid}").get_data(as_text=True)
 check("в карточке есть история", "История изменения должности и зарплаты" in body)
+# спойлеры блоков
+check("карточка имеет 4 спойлера", body.count('class="card accordion"') == 4)
+check("спойлер заметок развёрнут", 'data-acc="notes" open' in body)
+check("спойлер истории свёрнут", 'data-acc="history"' in body and 'data-acc="history" open' not in body)
 c.post(f"/employee/{eid}/history/add", data={
     "change_date": "2024-06-01", "position_id": str(p1), "salary": "150 000 ₽", "note": "повышение"
 }, follow_redirects=True)

@@ -21,9 +21,13 @@
 </div>
 
 <!-- История изменений должности/зарплаты -->
-<div class="card">
+<details class="card accordion" data-acc="history">
+  <summary class="acc-summary"><span class="acc-title">История изменения должности и зарплаты</span>
+    <span class="acc-count">{% if history %}· {{ history|length }} зап.{% endif %}</span>
+    <span class="acc-toggle">свернуть/развернуть</span>
+  </summary>
+  <div class="acc-body">
   <div class="toolbar" style="margin-bottom:8px">
-    <div class="panel-title" style="margin:0">История изменения должности и зарплаты</div>
     <div class="spacer"></div>
     <details class="inline-add">
       <summary class="btn small">+ Добавить запись</summary>
@@ -115,20 +119,25 @@
   {% else %}
     <div class="empty">Пока нет записей об изменениях должности и зарплаты. Добавьте первую — увидите историю по датам.</div>
   {% endif %}
-</div>
+  </div>
+</details>
 
 <!-- Случайные заметки о сотруднике -->
-<div class="card">
+<details class="card accordion" data-acc="notes" open>
+  <summary class="acc-summary"><span class="acc-title">Заметки</span>
+    <span class="acc-toggle">свернуть/развернуть</span>
+  </summary>
+  <div class="acc-body">
   <form method="post" action="{{ url_for('employee_notes', eid=emp.id) }}">
     <div class="toolbar" style="margin-bottom:8px">
-      <div class="panel-title" style="margin:0">Заметки</div>
       <div class="spacer"></div>
       <button class="btn small primary" type="submit">Сохранить</button>
     </div>
     <textarea name="notes" style="min-height:110px"
               placeholder="Случайные заметки о сотруднике: черты характера, пожелания по развитию, подвижки, что угодно вне привязки к полугодию.">{{ emp.notes or '' }}</textarea>
   </form>
-</div>
+  </div>
+</details>
 
 <!-- Выбор года -->
 <div class="toolbar">
@@ -146,8 +155,11 @@
 </div>
 
 <!-- Полугодовые записи -->
-<div class="card">
-  <div class="panel-title">Полугодовые записи · {{ year }} год</div>
+<details class="card accordion" data-acc="semesters">
+  <summary class="acc-summary"><span class="acc-title">Полугодовые записи · {{ year }} год</span>
+    <span class="acc-toggle">свернуть/развернуть</span>
+  </summary>
+  <div class="acc-body">
   <div class="semester-blocks">
     {% for code, label in semesters.items() %}
       {% set rec = records.get(code) %}
@@ -183,12 +195,17 @@
       </div>
     {% endfor %}
   </div>
-</div>
+  </div>
+</details>
 
 <!-- Встречи 1-на-1 -->
-<div class="card">
+<details class="card accordion" data-acc="meetings">
+  <summary class="acc-summary"><span class="acc-title">Встречи 1-на-1</span>
+    <span class="acc-count">{% if meetings %}· {{ meetings|length }}{% endif %}</span>
+    <span class="acc-toggle">свернуть/развернуть</span>
+  </summary>
+  <div class="acc-body">
   <div class="toolbar" style="margin-bottom:8px">
-    <div class="panel-title" style="margin:0">Встречи 1-на-1</div>
     <div class="spacer"></div>
     <a class="btn small" href="{{ url_for('meeting_new', eid=emp.id) }}">+ Новая встреча</a>
   </div>
@@ -212,6 +229,27 @@
   {% else %}
     <div class="empty">Встреч пока не было. Добавьте первую, чтобы фиксировать итоги 1-на-1.</div>
   {% endif %}
-</div>
+  </div>
+</details>
+
+<script>
+/* Сохраняем развёрнутость спойлеров в localStorage */
+(function () {
+  var KEY = 'hr-notes-acc';
+  var stored = {};
+  try { stored = JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (e) {}
+  document.querySelectorAll('details.accordion').forEach(function (d) {
+    var k = d.getAttribute('data-acc') || d.querySelector('.acc-title').textContent.trim();
+    // по умолчанию: ничего не задано/не сохранено — используем атрибут open
+    if (stored.hasOwnProperty(k)) {
+      d.open = stored[k];
+    }
+    d.addEventListener('toggle', function () {
+      stored[k] = d.open;
+      try { localStorage.setItem(KEY, JSON.stringify(stored)); } catch (e) {}
+    });
+  });
+})();
+</script>
 
 {% endblock %}
