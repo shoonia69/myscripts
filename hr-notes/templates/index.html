@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}Сотрудники {{ year }} · HR-Notes{% endblock %}
+{% block content %}
+
+<div class="toolbar">
+  <div class="year-tabs">
+    {% for y in years %}
+      <a class="year-tab {{ 'active' if y == year else '' }}"
+         href="{{ url_for('index', year=y) }}">{{ y }}</a>
+    {% endfor %}
+    {% if not years %}
+      <span class="year-tab active">{{ year }}</span>
+    {% endif %}
+  </div>
+  <div class="spacer"></div>
+  <a class="btn primary" href="{{ url_for('employee_new') }}">+ Добавить сотрудника</a>
+</div>
+
+<div class="card">
+  <div class="panel-title">Сотрудники · {{ year }} год</div>
+  {% if employees %}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Сотрудник</th>
+          <th>Отдел</th>
+          <th>Должность</th>
+          <th>Зарплата</th>
+          <th>I полугодие</th>
+          <th>II полугодие</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for e in employees %}
+        <tr>
+          <td class="name">{{ e.name }}</td>
+          <td>{{ e.department or '—' }}</td>
+          <td><span class="sub">{{ e.position or '—' }}</span></td>
+          <td>{{ e.salary or '—' }}</td>
+          <td>
+            {% if e.records.get('1H') %}
+              <span class="tag tag-1H">записано</span>
+            {% else %}
+              <span class="sub">—</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if e.records.get('2H') %}
+              <span class="tag tag-2H">записано</span>
+            {% else %}
+              <span class="sub">—</span>
+            {% endif %}
+          </td>
+          <td><a class="view" href="{{ url_for('employee_view', eid=e.id, year=year) }}">Открыть →</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+    <div class="empty">Пока нет сотрудников. Добавьте первого — откроется вкладка.</div>
+  {% endif %}
+</div>
+
+{% endblock %}
