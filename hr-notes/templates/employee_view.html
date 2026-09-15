@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}{{ emp.name }} · HR-Notes{% endblock %}
+{% block title %}{{ emp.name }} · TeamBook{% endblock %}
 {% block content %}
 
 <!-- Карточка сотрудника -->
@@ -235,7 +235,7 @@
 <script>
 /* Сохраняем развёрнутость спойлеров в localStorage */
 (function () {
-  var KEY = 'hr-notes-acc';
+  var KEY = 'teambook-acc';
   var stored = {};
   try { stored = JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (e) {}
   document.querySelectorAll('details.accordion').forEach(function (d) {

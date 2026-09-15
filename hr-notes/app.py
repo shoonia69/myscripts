@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-HR Notes — личный трекер руководителя.
+TeamBook — блокнот руководителя.
 Заметки о подчинённых: карточки сотрудников (должность/отдел/зарплата),
 справочники должностей и отделов, полугодовые записи (цели, предложения,
 пожелания, комментарии), итоги встреч 1-на-1. Разбивка по годам.
@@ -119,13 +119,13 @@ def init_db():
     cols = {r[1] for r in db.execute("PRAGMA table_info(employees)").fetchall()}
     if "notes" not in cols:
         db.execute("ALTER TABLE employees ADD COLUMN notes TEXT DEFAULT ''")
-        print("[HR-Notes] Миграция employees: добавлена колонка notes")
+        print("[TeamBook] Миграция employees: добавлена колонка notes")
 
     # Миграция: добавление колонки hire_date (дата приёма)
     cols = {r[1] for r in db.execute("PRAGMA table_info(employees)").fetchall()}
     if "hire_date" not in cols:
         db.execute("ALTER TABLE employees ADD COLUMN hire_date TEXT DEFAULT ''")
-        print("[HR-Notes] Миграция employees: добавлена колонка hire_date")
+        print("[TeamBook] Миграция employees: добавлена колонка hire_date")
 
     # Починка FK-ссылок, сломанных переименованием employees (см. _migrate_employees).
     # SQLite при ALTER TABLE RENAME переписывает ссылки на employees в дочерние
@@ -152,7 +152,7 @@ def _repair_dangling_fk(db, table, fk_col):
     if fixed == sql:
         return  # ссылок на employees_old нет — всё в порядке
 
-    print(f"[HR-Notes] Починка FK: {table} ссылалась на employees_old "
+    print(f"[TeamBook] Починка FK: {table} ссылалась на employees_old "
           f"(битая ссылка от переименования), пересоздаю с FK на employees")
 
     # Пересоздаём под временным именем (имя в DDL может быть и с кавычками, и без)
@@ -211,7 +211,7 @@ def _migrate_employees(db):
         """
     )
     db.execute("DROP TABLE employees_old")
-    print(f"[HR-Notes] Миграция employees: добавлено "
+    print(f"[TeamBook] Миграция employees: добавлено "
           f"должностей={len(p_rows)}, отделов={len(d_rows)} (резерв: {dest})")
 
 
@@ -714,8 +714,8 @@ if __name__ == "__main__":
     if not ADMIN_PASSWORD:
         ADMIN_PASSWORD = secrets.token_urlsafe(12)
         print("=" * 60)
-        print(f"[HR-Notes] Пароль не задан (HR_PASSWORD).")
-        print(f"[HR-Notes] Сгенерирован временный: {ADMIN_PASSWORD}")
+        print(f"[TeamBook] Пароль не задан (HR_PASSWORD).")
+        print(f"[TeamBook] Сгенерирован временный: {ADMIN_PASSWORD}")
         print("=" * 60)
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=os.environ.get("FLASK_DEBUG") == "1")

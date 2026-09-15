@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{% block title %}HR-Notes{% endblock %}</title>
+<title>{% block title %}TeamBook{% endblock %}</title>
 <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
 <header class="topbar">
   <div class="brand">
-    <a href="{{ url_for('index') }}"><span class="logo">HR</span> <span class="brand-name">HR-Notes</span></a>
+    <a href="{{ url_for('index') }}"><span class="logo">TB</span> <span class="brand-name">TeamBook</span></a>
   </div>
   <nav class="nav">
     <a href="{{ url_for('index') }}">Сотрудники</a>
@@ -37,7 +37,7 @@
 </main>
 
 <footer class="footer">
-  HR-Notes · личный трекер руководителя · данные хранятся на вашем сервере
+  TeamBook · блокнот руководителя · данные хранятся на вашем сервере
 </footer>
 </body>
 </html>
