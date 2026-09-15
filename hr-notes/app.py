@@ -110,13 +110,62 @@ def init_db():
         db.execute("ALTER TABLE employees ADD COLUMN notes TEXT DEFAULT ''")
         print("[HR-Notes] Миграция employees: добавлена колонка notes")
 
+    # Починка FK-ссылок, сломанных переименованием employees (см. _migrate_employees).
+    # SQLite при ALTER TABLE RENAME переписывает ссылки на employees в дочерние
+    # таблицы (meetings, year_records) -> employees_old, которые после DROP битые.
+    _repair_dangling_fk(db, "meetings", "employee_id")
+    _repair_dangling_fk(db, "year_records", "employee_id")
+
     db.commit()
     db.close()
+
+
+def _repair_dangling_fk(db, table, fk_col):
+    """Если таблица ссылается на employees_old (битая ссылка от переименования),
+    пересоздаём её с корректным FK на employees, сохраняя данные."""
+    import re
+    row = db.execute(
+        "SELECT sql FROM sqlite_master WHERE type='table' AND name=?", (table,)
+    ).fetchone()
+    if row is None:
+        return
+    sql = row["sql"]
+    # Нормализуем битые ссылки на корректную (с кавычками или без)
+    fixed = sql.replace('employees_old', 'employees')
+    if fixed == sql:
+        return  # ссылок на employees_old нет — всё в порядке
+
+    print(f"[HR-Notes] Починка FK: {table} ссылалась на employees_old "
+          f"(битая ссылка от переименования), пересоздаю с FK на employees")
+
+    # Пересоздаём под временным именем (имя в DDL может быть и с кавычками, и без)
+    new_name = f"{table}_new"
+    # имя таблицы в CREATE: "CREATE TABLE [\"]meetings[\"]"
+    fixed_new = re.sub(
+        r'(CREATE TABLE\s+)"?' + re.escape(table) + r'"?',
+        r'\g<1>"' + new_name + '"',
+        fixed,
+    )
+    db.execute(f"DROP TABLE IF EXISTS {new_name}")
+    db.executescript(fixed_new)
+    # копируем данные
+    cols = [r["name"] for r in db.execute(f"PRAGMA table_info({table})").fetchall()]
+    col_str = ", ".join(f'"{c}"' for c in cols)
+    db.execute(f"INSERT INTO {new_name} ({col_str}) SELECT {col_str} FROM {table}")
+    # подменяем
+    db.execute(f"DROP TABLE {table}")
+    db.execute(f"ALTER TABLE {new_name} RENAME TO \"{table}\"")
 
 
 def _migrate_employees(db):
     """Переносим старые TEXT-поля position/department в справочники."""
     dest = DB_PATH + ".bak"
+    # Отключаем автопереписывание FK-ссылок при переименовании, иначе SQLite
+    # изменит references employees -> employees_old в дочерних таблицах.
+    try:
+        db.execute("PRAGMA legacy_alter_table = ON")
+    except Exception:
+        pass
     # Уникальные значения для справочников
     p_rows = db.execute(
         "SELECT DISTINCT trim(position) v FROM employees "

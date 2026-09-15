@@ -88,6 +88,26 @@ cols = {r[1] for r in db.execute("PRAGMA table_info(employees)")}
 if "position" in cols or "department" in cols:
     fail.append("старые TEXT-колонки не удалены")
 
+# КРИТИЧНО: после миграции FK-ссылки в meetings/year_records должны указывать
+# на employees (не на employees_old), и вставка должна работать.
+for t in ("meetings", "year_records"):
+    sql = db.execute("SELECT sql FROM sqlite_master WHERE type='table' AND name=?",
+                     (t,)).fetchone()[0]
+    if "employees_old" in sql:
+        fail.append(f"FK в {t} указывает на employees_old (битая ссылка)")
+
+# вставка встречи/записи после миграции не должна падать
+try:
+    with appmod.app.app_context():
+        adb = appmod.get_db()
+        adb.execute("INSERT INTO meetings (employee_id, date, summary) VALUES (1, '2026-01-01', 'тест')")
+        adb.execute("INSERT INTO year_records (employee_id, year, semester, goals_employee) "
+                    "VALUES (1, 2026, '1H', 'цель')")
+        adb.commit()
+    print("  вставка встречи и годовой записи после миграции — OK")
+except Exception as e:
+    fail.append(f"вставка после миграции не работает: {e}")
+
 db.close()
 print()
 if fail:
